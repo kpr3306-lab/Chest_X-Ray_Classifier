@@ -6,3 +6,7 @@ staticfiles/
 .env
 .venv/
 venv/
+
+requirements-local.txt
+
+archive.zip
