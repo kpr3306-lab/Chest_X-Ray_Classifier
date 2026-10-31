@@ -1,0 +1,74 @@
+{% extends "detector/base.html" %}
+{% block title %}About the model &middot; PneumoDetect AI{% endblock %}
+{% block heading %}About Project{% endblock %}
+{% block content %}
+<div class="prose">
+<h1>About the model</h1>
+<p class="lead">PneumoDetect AI fine-tunes a pretrained ResNet-18 to sort chest X-rays into four classes: COVID19, NORMAL, PNEUMONIA and TUBERCULOSIS.
+It is a learning project, built to demonstrate transfer learning and honest model evaluation.</p>
+
+<section class="panel">
+  <h2>Dataset</h2>
+  <p><strong>Chest X-Ray (Pneumonia, Covid-19, Tuberculosis)</strong> on Kaggle, with Train / Test / Val folders and one sub-folder per class:
+  <strong>COVID19</strong>, <strong>NORMAL</strong>, <strong>PNEUMONIA</strong> and <strong>TUBERCULOSIS</strong>. The exact number of images per
+  class in the training and validation splits is printed in the training log, and the test set size is shown on the
+  <a href="{% url 'detector:dashboard' %}">Performance</a> page.</p>
+  <p>The classes are imbalanced: PNEUMONIA is the largest group and COVID19 and TUBERCULOSIS are much smaller, so class weights are used during training.
+  The dataset combines images from several public sources (for example, tuberculosis images are described as coming from a separate public TB database),
+  so the groups may differ in more than the disease (see Limitations).</p>
+</section>
+
+<section class="panel">
+  <h2>Preprocessing and augmentation</h2>
+  <ul>
+    <li><strong>All images:</strong> converted to 3-channel grayscale, resized to 224&times;224, scaled to [0, 1] and normalised
+        with ImageNet mean and standard deviation (what the pretrained network expects). Uploads in this app go through exactly this pipeline.</li>
+    <li><strong>Training images only:</strong> random horizontal flip, random rotation up to 10&deg;, and brightness jitter (0.2).
+        Validation and test images are never augmented.</li>
+  </ul>
+</section>
+
+<section class="panel">
+  <h2>Architecture</h2>
+  <p><strong>ResNet-18</strong> with ImageNet-pretrained weights. The original 1000-class output layer is replaced by a new
+  linear layer (512 &rarr; 4). The pretrained layers act as a feature extractor, which is the core idea of
+  transfer learning.</p>
+</section>
+
+<section class="panel">
+  <h2>Training and validation</h2>
+  <ul>
+    <li>A <strong>stratified 80/20 split</strong> of the training folder
+        (fixed random seed, same class mix in both parts) is used for validation; the dataset&rsquo;s own Val folder is not used.</li>
+    <li><strong>Loss:</strong> cross-entropy with class weights to offset the class imbalance.</li>
+    <li><strong>Phase 1:</strong> backbone frozen, only the new final layer trained (Adam, learning rate 1e-3, 5 epochs).</li>
+    <li><strong>Phase 2:</strong> the last residual block (<code>layer4</code>) unfrozen and fine-tuned with the final layer
+        (Adam, learning rate 1e-4, 5 epochs).</li>
+    <li>The checkpoint with the <strong>lowest validation loss</strong> was kept.</li>
+    <li>The test set was used once for the final metrics shown on the
+        <a href="{% url 'detector:dashboard' %}">Performance</a> page.</li>
+  </ul>
+</section>
+
+<section class="panel">
+  <h2>Shortcut learning</h2>
+  <p>In the earlier two-class version of this project, Grad-CAM heatmaps showed the model often looking at image corners, borders and
+  text markers instead of the lungs, which suggests it partly relied on dataset-specific artifacts. That check has not yet been
+  repeated for this four-class model. The concern is probably larger here: if the COVID19 and TUBERCULOSIS images were collected from different
+  sources than the others, the model could learn the source (machine, crop, markers) rather than the disease.</p>
+</section>
+
+<section class="callout callout-warn">
+  <h2>Limitations and intended use</h2>
+  <ul>
+    <li><strong>Educational use only.</strong> Not a medical device, not clinically validated, and not a diagnosis.</li>
+    <li>Trained on one public dataset; performance on other populations, hospitals or X-ray machines is unknown.</li>
+    <li>The test set is limited in size, and the COVID19 and TUBERCULOSIS classes are small, so their scores can change a lot with different data.</li>
+    <li>The PNEUMONIA class is one group; the model is not asked to tell bacterial from viral pneumonia, and COVID-19 can itself cause pneumonia, and pneumonia and tuberculosis can look alike on a chest X-ray.</li>
+    <li>The percentage shown for a prediction is the model&rsquo;s softmax output. It is not the probability that a person has COVID-19, pneumonia or tuberculosis,
+        and such scores are often overconfident.</li>
+    <li>The model does not check that an uploaded image is a chest X-ray.</li>
+  </ul>
+</section>
+</div>
+{% endblock %}

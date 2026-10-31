@@ -1,0 +1,91 @@
+{% extends "detector/base.html" %}
+{% load static %}
+{% block title %}Model performance &middot; PneumoDetect AI{% endblock %}
+{% block heading %}Model Performance{% endblock %}
+{% block content %}
+<h1>Model performance</h1>
+
+{% if not m %}
+<div class="card empty">
+  <p><strong>Metrics haven&rsquo;t been exported yet.</strong></p>
+  <p class="muted">This dashboard shows real results only. Generate them from your trained model by running, from the project folder:</p>
+  <pre class="code">python export_metrics.py --data "path/to/Data"</pre>
+  <p class="muted small">See README.md for details (including how to add the training curves).</p>
+</div>
+{% else %}
+<p class="muted">
+  Computed from the model file <code>{{ m.model_file }}</code> on the held-out test set
+  ({{ m.n_test }} images the model never trained on).
+  {% if m.exported_at %}Exported {{ m.exported_at }}.{% endif %}
+</p>
+
+<div class="cards">
+  {% for c in m.cards %}
+  <div class="card stat"><div class="stat-label">{{ c.label }}</div><div class="stat-value">{{ c.value }}</div><div class="small muted">{{ c.hint }}</div></div>
+  {% endfor %}
+</div>
+
+<div class="two-col">
+  <div class="card">
+    <h3>Confusion matrix (test set)</h3>
+    <table class="cm">
+      <thead><tr><th></th><th colspan="{{ m.class_names|length }}" class="cm-head">Predicted</th></tr>
+        <tr><th></th>{% for n in m.class_names %}<th>{{ n }}</th>{% endfor %}</tr></thead>
+      <tbody>
+      {% for row in m.cm_rows %}
+        <tr><th>Actual {{ row.label }}</th>
+          {% for c in row.cells %}
+          <td class="cm-cell {% if c.correct %}cm-ok{% else %}cm-bad{% endif %}" style="--a: {{ c.alpha }}">{{ c.value }}</td>
+          {% endfor %}
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% if m.confusions %}
+    <p class="small muted">Rows are the true class, columns the model&rsquo;s answer; the diagonal is correct.
+    Most common mistakes:
+    {% for c in m.confusions|slice:":3" %}{{ c.count }} {{ c.actual }} predicted as {{ c.predicted }}{% if not forloop.last %}; {% endif %}{% endfor %}.</p>
+    {% else %}
+    <p class="small muted">No mistakes on the test set.</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h3>Precision, recall and F1 by class</h3>
+    <table class="table compact">
+      <thead><tr><th>Class</th><th>Precision</th><th>Recall</th><th>F1</th><th>Images</th></tr></thead>
+      <tbody>
+      {% for c in m.classes %}
+        <tr><td>{{ c.name }}</td><td>{{ c.precision }}</td><td>{{ c.recall }}</td><td>{{ c.f1 }}</td><td>{{ c.support }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <p class="small muted">Recall of a class is its sensitivity: the share of its images the model caught.
+    Macro averages treat every class equally, so a small class such as TUBERCULOSIS counts as much as a large one.
+    {% if m.roc_auc_per_class %}One-vs-rest ROC-AUC:
+    {% for r in m.roc_auc_per_class %}{{ r.name }} {{ r.auc|floatformat:3 }}{% if not forloop.last %}, {% endif %}{% endfor %}.{% endif %}</p>
+  </div>
+</div>
+
+<h2>Training curves</h2>
+{% if m.history %}
+<div class="two-col">
+  <div class="card"><h3>Training vs validation loss</h3><div id="chart-loss"></div></div>
+  <div class="card"><h3>Training vs validation accuracy</h3><div id="chart-acc"></div></div>
+</div>
+<p class="small muted">The dashed line marks where fine-tuning of the last ResNet block began. The saved model is the epoch with the lowest validation loss.</p>
+{{ m.history|json_script:"history-data" }}
+{% else %}
+<div class="card empty">
+  <p><strong>Training history not provided.</strong></p>
+  <p class="muted small">Re-run <code>export_metrics.py</code> with <code>--log training_log.txt</code> (the printed epoch log from your training run). See README.md.</p>
+</div>
+{% endif %}
+
+<div class="callout callout-warn">
+  These figures come from one small, single-source test set and are not a clinical validation.
+  See <a href="{% url 'detector:about' %}">About the model</a> for limitations.
+</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}{% if m and m.history %}<script src="{% static 'detector/js/charts.js' %}"></script>{% endif %}{% endblock %}

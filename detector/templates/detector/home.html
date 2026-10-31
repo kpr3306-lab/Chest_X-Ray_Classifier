@@ -1,0 +1,202 @@
+{% extends "detector/base.html" %}
+{% load static %}
+{% block heading %}Overview{% endblock %}
+{% block content %}
+{% if day %}
+<div class="filter-bar">
+  <svg class="ic"><use href="#i-calendar"/></svg>Showing predictions from <strong>{{ day|date:"l, j M Y" }}</strong>
+  <a class="btn btn-soft btn-small" href="{% url 'detector:home' %}">Clear filter</a>
+</div>
+{% endif %}
+<div class="ov-grid">
+
+  {# ---------------------------------------------------------------- Lung mapping #}
+  <section class="panel lung-panel">
+    <header class="panel-head">
+      <h2><svg class="ic ic-head"><use href="#i-lungs"/></svg>Lung Mapping</h2>
+      {% for p in recent %}
+        {% if p.label == "NORMAL" %}
+          <span class="flag flag-ok" data-for="{{ p.pk }}" {% if not forloop.first %}hidden{% endif %}><svg class="ic"><use href="#i-check"/></svg>No finding flagged</span>
+        {% else %}
+          <span class="flag flag-warn" data-for="{{ p.pk }}" {% if not forloop.first %}hidden{% endif %}><svg class="ic"><use href="#i-alert"/></svg>Attention Required</span>
+        {% endif %}
+      {% empty %}
+        <span class="flag flag-idle">Awaiting scan</span>
+      {% endfor %}
+    </header>
+
+    <div class="lung-body">
+      <div class="lung-thumbs" role="listbox" aria-label="Analysed X-rays">
+        {% for p in recent %}
+          <button type="button" class="thumb-tile{% if forloop.first %} active{% endif %}" data-pk="{{ p.pk }}" role="option"
+                  aria-selected="{% if forloop.first %}true{% else %}false{% endif %}"
+                  data-tip-title="{{ p.patient_display }}" data-tip-sub="{{ p.patient_ref }} &middot; {{ p.label }} {{ p.confidence_pct }}%"
+                  aria-label="{{ p.patient_display }}, {{ p.patient_ref }}, {{ p.label }}">
+            <img src="{% url 'detector:image' p.pk %}" alt="" loading="lazy">
+            <span class="dot dot-{{ p.label|lower }}"></span>
+          </button>
+        {% empty %}
+          <a href="{% url 'detector:upload' %}" class="thumb-tile active"><img src="{% static 'detector/img/lungs.svg' %}" alt="Upload an X-ray" class="dim"></a>
+        {% endfor %}
+      </div>
+
+      <div class="lung-visual" id="lung-visual">
+        <div class="lung-glow"></div>
+        <img src="{% static 'detector/img/lungs.svg' %}" alt="Anatomical lung illustration" class="lung-img" id="lung-2d">
+        <canvas id="lung-3d" hidden aria-label="Rotatable 3D lung model. Drag to rotate." role="img"></canvas>
+        <div class="scanline" aria-hidden="true"></div>
+        <div class="view-toggle" id="view-toggle" hidden>
+          <button type="button" data-view="3d" class="on">3D</button><button type="button" data-view="2d">2D</button>
+        </div>
+        <span class="drag-hint" id="drag-hint" hidden>Drag to rotate</span>
+      </div>
+
+      <div class="lung-info">
+        {% for p in recent %}
+        <div class="lung-detail" data-for="{{ p.pk }}" {% if not forloop.first %}hidden{% endif %}>
+          <ul class="kv-list">
+            <li><svg class="ic"><use href="#i-user"/></svg><span>Patient</span><strong>{{ p.patient_display }}</strong></li>
+            <li><svg class="ic"><use href="#i-id"/></svg><span>Patient ID</span><strong>{{ p.patient_ref }}</strong></li>
+            {% if p.patient_age is not None or p.patient_sex or p.patient_blood_type %}
+            <li><svg class="ic"><use href="#i-drop"/></svg><span>Age / Sex / Blood</span><strong>{{ p.patient_age|default_if_none:"&ndash;" }} &middot; {{ p.patient_sex|default:"&ndash;" }} &middot; {{ p.patient_blood_type|default:"&ndash;" }}</strong></li>
+            {% endif %}
+            <li><span class="dot dot-{{ p.label|lower }}"></span><span>Prediction</span><strong class="c-{{ p.label|lower }}">{{ p.label }}</strong></li>
+            <li><svg class="ic"><use href="#i-target"/></svg><span>Confidence</span><strong>{{ p.confidence_pct }}%</strong></li>
+            {% with r=p.runner_up %}{% if r %}<li><svg class="ic"><use href="#i-bars"/></svg><span>Runner-up</span><strong class="c-{{ r.css }}">{{ r.name }} {{ r.pct }}%</strong></li>{% endif %}{% endwith %}
+            <li><svg class="ic"><use href="#i-clock"/></svg><span>Analysed</span><strong>{{ p.created_at|date:"j M, H:i" }}</strong></li>
+          </ul>
+          <a class="btn btn-soft" href="{% url 'detector:result' p.pk %}">View Details<svg class="ic"><use href="#i-arrow"/></svg></a>
+        </div>
+        {% empty %}
+        <p class="muted">{% if day %}No X-rays were analysed on {{ day|date:"j M Y" }}.{% else %}No X-ray has been analysed in this browser yet. Upload one to map the model&rsquo;s prediction here.{% endif %}</p>
+        <a class="btn btn-primary" href="{% url 'detector:upload' %}">Upload X-ray<svg class="ic"><use href="#i-arrow"/></svg></a>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  {# ---------------------------------------------------------- Per-class indicators #}
+  <section class="panel ind-panel">
+    <header class="panel-head">
+      <h2><svg class="ic ic-head"><use href="#i-bars"/></svg>Indicators by class</h2>
+      <div class="legend"><span><i class="lg lg-blue"></i>Recall</span><span><i class="lg lg-amber"></i>Precision</span></div>
+    </header>
+    {% if m %}
+    <div class="bar-chart" role="img" aria-label="Recall and precision per class on the test set">
+      <div class="y-axis"><span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span></div>
+      <div class="bars">
+        {% for c in m.classes %}
+        <div class="bar-col" title="{{ c.name }}: recall {{ c.recall }}, precision {{ c.precision }}">
+          <div class="pill-wrap">
+            <div class="pill pill-back" style="height: {{ c.precision }}"></div>
+            <div class="pill pill-front" style="height: {{ c.recall }}"><span>{{ c.recall }}</span></div>
+          </div>
+          <span class="bar-name">{{ c.name }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <p class="panel-note">Held-out test set &middot; {{ m.n_test }} images never seen in training.</p>
+    {% else %}
+    <p class="muted">Metrics haven&rsquo;t been exported yet. See <a href="{% url 'detector:dashboard' %}">Model Performance</a>.</p>
+    {% endif %}
+  </section>
+
+  {# --------------------------------------------------------------- Metric cards #}
+  <div class="ov-cards">
+    {% if m %}
+    <section class="panel stat-card">
+      <header class="panel-head"><h3>Test accuracy</h3><span class="chip"><i class="dot dot-amber"></i>Validation curve</span></header>
+      <div class="stat-row">
+        <div class="stat-big">{{ m.accuracy }}<small>%</small></div>
+        <div class="spark" data-spark="val_acc" data-color="#f5b524"></div>
+      </div>
+      <p class="panel-note">{{ m.cards.0.hint }} on the test set</p>
+    </section>
+
+    <section class="panel stat-card">
+      <header class="panel-head"><h3>Validation loss</h3><span class="chip"><i class="dot dot-blue"></i>Per epoch</span></header>
+      <div class="stat-row">
+        <div class="stat-big">{{ m.history.val_loss|last|default:"&ndash;" }}{% if m.history %}<svg class="ic trend"><use href="#i-down"/></svg>{% endif %}</div>
+        <div class="spark" data-spark="val_loss" data-color="#1f8bff"></div>
+      </div>
+      <p class="panel-note">{% if m.history %}Final epoch &middot; started at {{ m.history.val_loss|first }}{% else %}Training history not exported{% endif %}</p>
+    </section>
+
+    <section class="panel stat-card">
+      <header class="panel-head"><h3>Model quality</h3></header>
+      <div class="stat-row">
+        <div>
+          <div class="stat-big">{{ m.roc_auc|floatformat:3|default:"&ndash;" }}</div>
+          <p class="panel-note">ROC-AUC (macro, one-vs-rest)</p>
+        </div>
+        <div class="donut" style="--p: {{ m.macro_f1 }}">
+          <div><strong>{{ m.macro_f1 }}%</strong><span>Macro F1</span></div>
+        </div>
+      </div>
+    </section>
+    {% else %}
+    <section class="panel stat-card span-3"><p class="muted">Model metrics will appear here once <code>export_metrics.py</code> has been run.</p></section>
+    {% endif %}
+
+    <section class="panel stat-card">
+      <header class="panel-head"><h3>Your predictions</h3><span class="chip">{{ total }} total</span></header>
+      {% for t in totals %}
+      <div class="meter">
+        <div class="meter-top"><span>{{ t.name }}</span><span>{{ t.n }}</span><span class="muted">{{ t.pct }}%</span></div>
+        <div class="meter-track"><div class="meter-fill bar-{{ t.css }}" style="width: {{ t.pct }}%"></div></div>
+      </div>
+      {% endfor %}
+    </section>
+  </div>
+
+  {# ----------------------------------------------------------- Recent predictions #}
+  <section class="panel recent-panel">
+    <header class="panel-head">
+      <h2><svg class="ic ic-head"><use href="#i-history"/></svg><span>Recent predictions<small>{% if day %}Analysed on {{ day|date:"j M Y" }}.{% else %}Your latest analysed X-rays in this browser session.{% endif %}</small></span></h2>
+      <a class="btn btn-soft btn-small" href="{% url 'detector:history' %}">View All<svg class="ic"><use href="#i-arrow"/></svg></a>
+    </header>
+    <div class="recent-tiles">
+      {% for p in recent|slice:":3" %}
+      <a class="recent-tile" href="{% url 'detector:result' p.pk %}"
+         data-tip-title="{{ p.patient_display }}" data-tip-sub="{{ p.patient_ref }} &middot; {{ p.label }} {{ p.confidence_pct }}%">
+        <span class="dot dot-{{ p.label|lower }}"></span>
+        <img src="{% url 'detector:image' p.pk %}" alt="X-ray predicted {{ p.label }}">
+        <span class="recent-label">{{ p.label }}<svg class="ic"><use href="#i-arrow-ur"/></svg></span>
+        <span class="recent-meta">{{ p.confidence_pct }}% &middot; {{ p.created_at|date:"j M, H:i" }}</span>
+      </a>
+      {% empty %}
+      <div class="recent-empty">
+        <p class="muted">No predictions yet.</p>
+        <a class="btn btn-primary" href="{% url 'detector:upload' %}">Analyse your first X-ray</a>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+<section class="how">
+  <h2>How the AI model works</h2>
+  <div class="steps">
+    <div class="panel step"><span class="step-n">1</span>
+      <h3>Preprocess</h3>
+      <p>Your image is converted to 3-channel grayscale, resized to 224&times;224 pixels and normalised
+      with the same statistics the model was trained with.</p></div>
+    <div class="panel step"><span class="step-n">2</span>
+      <h3>Extract features</h3>
+      <p>ResNet-18, pretrained on ImageNet, turns the image into 512 numbers describing edges,
+      textures and shapes. Its last block was fine-tuned on chest X-rays.</p></div>
+    <div class="panel step"><span class="step-n">3</span>
+      <h3>Classify</h3>
+      <p>A small final layer maps those 512 numbers to four scores, which a softmax converts into
+      probabilities for COVID19, NORMAL, PNEUMONIA and TUBERCULOSIS.</p></div>
+    <div class="panel step"><span class="step-n">4</span>
+      <h3>Report</h3>
+      <p>The class with the highest probability is shown, along with that probability. It is the
+      model&rsquo;s output score, not the chance that a person has COVID-19, pneumonia or tuberculosis.</p></div>
+  </div>
+</section>
+{% if m and m.history %}{{ m.history|json_script:"history-data" }}{% endif %}
+{% endblock %}
+{% block scripts %}{% if m and m.history %}<script src="{% static 'detector/js/charts.js' %}"></script>{% endif %}
+<script src="{% static 'detector/js/overview.js' %}"></script>{% endblock %}

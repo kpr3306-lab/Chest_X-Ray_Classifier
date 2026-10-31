@@ -1,0 +1,61 @@
+{% extends "detector/base.html" %}
+{% block title %}Result &middot; PneumoDetect AI{% endblock %}
+{% block heading %}Prediction Result{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Prediction result</h1>
+  {% if pred.label == "NORMAL" %}
+    <span class="flag flag-ok"><svg class="ic"><use href="#i-check"/></svg>No finding flagged</span>
+  {% else %}
+    <span class="flag flag-warn"><svg class="ic"><use href="#i-alert"/></svg>Attention Required</span>
+  {% endif %}
+</div>
+
+<div class="result-grid">
+  <div class="panel xray-card">
+    <img src="{% url 'detector:image' pred.pk %}" alt="Uploaded chest X-ray">
+    <p class="small muted">{{ pred.original_name }}</p>
+  </div>
+
+  <div class="panel">
+    <table class="kv">
+      <tr><th>Patient</th><td><strong>{{ pred.patient_display }}</strong> <span class="muted small">{{ pred.patient_ref }}</span></td></tr>
+      {% if pred.patient_age is not None or pred.patient_sex or pred.patient_blood_type %}
+      <tr><th>Age &middot; Sex &middot; Blood type</th><td>{{ pred.patient_age|default_if_none:"&ndash;" }} &middot; {{ pred.get_patient_sex_display|default:"&ndash;" }} &middot; {{ pred.patient_blood_type|default:"&ndash;" }}</td></tr>
+      {% endif %}
+      {% if pred.patient_notes %}<tr><th>Symptoms / notes</th><td>{{ pred.patient_notes|linebreaksbr }}</td></tr>{% endif %}
+      <tr><th>Prediction</th>
+          <td><span class="badge badge-{{ pred.label|lower }}">{{ pred.label }}</span></td></tr>
+      <tr><th>Model confidence</th><td><strong>{{ pred.confidence_pct }}%</strong>
+          <span class="muted small">(model&rsquo;s probability for its predicted class)</span></td></tr>
+      <tr><th>Image</th><td>{{ pred.original_name|default:"Uploaded X-ray" }}</td></tr>
+      <tr><th>Processing status</th><td>{{ pred.status }}</td></tr>
+      <tr><th>Analysed</th><td>{{ pred.created_at|date:"j M Y, H:i" }}</td></tr>
+    </table>
+
+    <h3 class="mt">Model output scores</h3>
+    {% for r in pred.score_rows %}
+    <div class="bar-row"><span>{{ r.name }}</span>
+      <div class="bar"><div class="bar-fill bar-{{ r.css }}" style="width: {{ r.pct|floatformat:1 }}%"></div></div>
+      <span class="small">{{ r.pct }}%</span>
+    </div>
+    {% endfor %}
+
+    <div class="form-actions">
+      <a class="btn btn-primary" href="{% url 'detector:upload' %}">Analyse another</a>
+      <a class="btn btn-ghost" href="{% url 'detector:history' %}">History</a>
+      <form method="post" action="{% url 'detector:delete' pred.pk %}" class="inline"
+            onsubmit="return confirm('Delete this prediction and its uploaded image?');">
+        {% csrf_token %}<button class="btn btn-danger" type="submit">Delete</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="callout callout-warn">
+  <strong>This is an educational AI demonstration, not a medical diagnosis.</strong>
+  The percentage is the model&rsquo;s own output score, not the probability that a person actually has
+  COVID-19, pneumonia or tuberculosis, and such scores can be overconfident. The model was trained on a single public dataset and is not validated for
+  clinical use. Please see a qualified clinician for any health concern.
+</div>
+{% endblock %}

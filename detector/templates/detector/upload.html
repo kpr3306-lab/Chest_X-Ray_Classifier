@@ -1,0 +1,60 @@
+{% extends "detector/base.html" %}
+{% load static %}
+{% block title %}Upload X-ray &middot; PneumoDetect AI{% endblock %}
+{% block heading %}New Prediction{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Upload a chest X-ray</h1>
+    <p class="muted">JPG, JPEG or PNG, up to {{ max_mb }} MB. Educational demonstration only.</p>
+  </div>
+</div>
+
+<form id="upload-form" method="post" enctype="multipart/form-data" data-max-mb="{{ max_mb }}" novalidate class="upload-grid">
+  {% csrf_token %}
+  <section class="panel">
+    <header class="panel-head"><h2><svg class="ic ic-head"><use href="#i-upload"/></svg>Chest X-ray</h2></header>
+    <label id="dropzone" class="dropzone" for="xray-input">
+      <div id="dz-empty">
+        <div class="dz-icon"><svg class="ic"><use href="#i-upload"/></svg></div>
+        <p><strong>Drag &amp; drop an X-ray here</strong></p>
+        <p class="muted">or click to choose a file</p>
+      </div>
+      <div id="dz-preview" class="dz-preview" hidden>
+        <img id="preview-img" alt="Preview of the selected X-ray">
+        <p id="preview-name" class="small"></p>
+      </div>
+      {{ form.image }}
+    </label>
+
+    <p id="client-error" class="field-error" role="alert" {% if not form.image.errors %}hidden{% endif %}>
+      {% for e in form.image.errors %}{{ e }}{% endfor %}
+    </p>
+
+    <div class="form-actions">
+      <button id="submit-btn" class="btn btn-primary" type="submit" disabled>Run prediction</button>
+      <button id="clear-btn" class="btn btn-ghost" type="button" hidden>Remove image</button>
+      <span id="working" class="muted" hidden>Analysing&hellip; this can take a few seconds.</span>
+    </div>
+  </section>
+
+  <aside class="panel">
+    <header class="panel-head"><h2><svg class="ic ic-head"><use href="#i-user"/></svg>Patient details <span class="chip">Optional</span></h2></header>
+    <div class="field-grid">
+      {% for f in form %}{% if f.name != "image" %}
+      <div class="field{% if f.name == 'patient_notes' or f.name == 'patient_name' %} field-wide{% endif %}">
+        <label for="{{ f.id_for_label }}">{{ f.label }}</label>
+        {{ f }}
+        {% for e in f.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+      </div>
+      {% endif %}{% endfor %}
+    </div>
+    <div class="callout callout-warn">
+      <strong>Use made-up details and public sample images only.</strong>
+      This is an educational demo, not a medical records system: don&rsquo;t enter real patient names or upload real patient X-rays.
+      The model does not check whether an image is a chest X-ray, so unrelated pictures will still receive a (meaningless) prediction.
+    </div>
+  </aside>
+</form>
+{% endblock %}
+{% block scripts %}<script src="{% static 'detector/js/upload.js' %}"></script>{% endblock %}

@@ -1,0 +1,14 @@
+device: cpu
+train/val images per class: COVID19=368/92, NORMAL=1073/268, PNEUMONIA=3099/776, TUBERCULOSIS=520/130
+class weights: COVID19=3.44, NORMAL=1.18, PNEUMONIA=0.41, TUBERCULOSIS=2.43
+[head] ep 1/5 | train loss 0.751 acc 0.737 | val loss 0.481 acc 0.830 | 243s
+[head] ep 2/5 | train loss 0.409 acc 0.872 | val loss 0.375 acc 0.862 | 243s
+[head] ep 3/5 | train loss 0.331 acc 0.894 | val loss 0.313 acc 0.900 | 235s
+[head] ep 4/5 | train loss 0.304 acc 0.899 | val loss 0.274 acc 0.915 | 232s
+[head] ep 5/5 | train loss 0.285 acc 0.900 | val loss 0.273 acc 0.891 | 227s
+[finetune] ep 1/5 | train loss 0.197 acc 0.936 | val loss 0.145 acc 0.949 | 265s
+[finetune] ep 2/5 | train loss 0.095 acc 0.963 | val loss 0.111 acc 0.963 | 359s
+[finetune] ep 3/5 | train loss 0.060 acc 0.975 | val loss 0.097 acc 0.964 | 487s
+[finetune] ep 4/5 | train loss 0.060 acc 0.979 | val loss 0.101 acc 0.975 | 509s
+[finetune] ep 5/5 | train loss 0.034 acc 0.984 | val loss 0.082 acc 0.971 | 500s
+Saved best checkpoint (lowest val loss 0.082) to C:\Users\Kshitij Rane\Desktop\Edu_Material\Sem-V\FOML\Project\pneumodetect-django-4class\detector\ml_models\resnet18_chestxray_4class.pth

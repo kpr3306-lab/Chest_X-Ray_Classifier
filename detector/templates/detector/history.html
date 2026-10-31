@@ -1,0 +1,60 @@
+{% extends "detector/base.html" %}
+{% block title %}History &middot; PneumoDetect AI{% endblock %}
+{% block heading %}Prediction History{% endblock %}
+{% block content %}
+<h1>Prediction history</h1>
+<p class="muted">Only predictions made from this browser are shown. Records and images stay on the server until
+you delete them, and this history is tied to your browser&rsquo;s session cookie (7 days).</p>
+
+{% if day %}
+<div class="filter-bar">
+  <svg class="ic"><use href="#i-calendar"/></svg>Showing predictions from <strong>{{ day|date:"l, j M Y" }}</strong>
+  <a class="btn btn-soft btn-small" href="{% url 'detector:history' %}">Clear filter</a>
+</div>
+{% endif %}
+{% if page.object_list %}
+<div class="table-wrap">
+<table class="table">
+  <thead><tr><th>Date</th><th>Image</th><th>Patient</th><th>Prediction</th><th>Confidence</th><th>Action</th></tr></thead>
+  <tbody>
+  {% for p in page.object_list %}
+    <tr>
+      <td>{{ p.created_at|date:"j M Y" }}<br><span class="small muted">{{ p.created_at|date:"H:i" }}</span></td>
+      <td><a href="{% url 'detector:result' p.pk %}" class="thumb-link">
+            <img class="thumb" src="{% url 'detector:image' p.pk %}" alt="X-ray thumbnail">
+            <span class="small">{{ p.original_name|truncatechars:28 }}</span></a></td>
+      <td><strong>{{ p.patient_display }}</strong><br><span class="small muted">{{ p.patient_ref }}{% if p.patient_age is not None %} &middot; {{ p.patient_age }} y{% endif %}{% if p.patient_blood_type %} &middot; {{ p.patient_blood_type }}{% endif %}</span></td>
+      <td><span class="badge badge-{{ p.label|lower }}">{{ p.label }}</span></td>
+      <td>{{ p.confidence_pct }}%</td>
+      <td class="actions">
+        <a class="btn btn-small btn-ghost" href="{% url 'detector:result' p.pk %}">View</a>
+        <form method="post" action="{% url 'detector:delete' p.pk %}" class="inline"
+              onsubmit="return confirm('Delete this prediction and its uploaded image?');">
+          {% csrf_token %}<button class="btn btn-small btn-danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+{% if page.has_other_pages %}
+<div class="pager">
+  {% if page.has_previous %}<a class="btn btn-ghost btn-small" href="?page={{ page.previous_page_number }}{% if day %}&amp;date={{ day|date:'Y-m-d' }}{% endif %}">&larr; Newer</a>{% endif %}
+  <span class="small muted">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+  {% if page.has_next %}<a class="btn btn-ghost btn-small" href="?page={{ page.next_page_number }}{% if day %}&amp;date={{ day|date:'Y-m-d' }}{% endif %}">Older &rarr;</a>{% endif %}
+</div>
+{% endif %}
+
+<form method="post" action="{% url 'detector:delete_all' %}" class="mt"
+      onsubmit="return confirm('Delete ALL your predictions and uploaded images? This cannot be undone.');">
+  {% csrf_token %}<button class="btn btn-danger" type="submit">Delete all my data ({{ total }})</button>
+</form>
+{% else %}
+<div class="card empty">
+  <p>{% if day %}No predictions on {{ day|date:"j M Y" }}.{% else %}No predictions yet.{% endif %}</p>
+  <a class="btn btn-primary" href="{% url 'detector:upload' %}">Upload an X-ray</a>
+</div>
+{% endif %}
+{% endblock %}
