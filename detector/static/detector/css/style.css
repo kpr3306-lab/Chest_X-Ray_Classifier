@@ -264,7 +264,8 @@ td.actions .btn + form { margin-left: 6px; }
 .card.stat { padding: 18px 20px; }
 .stat-label { font-size: .8rem; color: var(--muted); } .stat-value { font-size: 1.9rem; font-weight: 700; margin: 2px 0; letter-spacing: -.02em;
   background: linear-gradient(90deg, #fff, #9fdcff); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 18px 0; }
+.scroll-x { overflow-x: auto; }
+.two-col { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; margin: 18px 0; }
 .cm { border-collapse: separate; border-spacing: 6px; margin: 8px auto; }
 .cm th { font-weight: 600; font-size: .74rem; color: var(--muted); padding: 4px 6px; text-align: center; }
 .cm-cell { width: 84px; height: 66px; text-align: center; font-size: 1.35rem; font-weight: 700; border-radius: 12px; color: #fff; }

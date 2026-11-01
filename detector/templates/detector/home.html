@@ -27,7 +27,7 @@
 
     <div class="lung-body">
       <div class="lung-thumbs" role="listbox" aria-label="Analysed X-rays">
-        {% for p in recent %}
+        {% for p in recent|slice:":4" %}{# 4 tiles fill the column without scrolling #}
           <button type="button" class="thumb-tile{% if forloop.first %} active{% endif %}" data-pk="{{ p.pk }}" role="option"
                   aria-selected="{% if forloop.first %}true{% else %}false{% endif %}"
                   data-tip-title="{{ p.patient_display }}" data-tip-sub="{{ p.patient_ref }} &middot; {{ p.label }} {{ p.confidence_pct }}%"

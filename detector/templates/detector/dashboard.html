@@ -28,7 +28,7 @@
 <div class="two-col">
   <div class="card">
     <h3>Confusion matrix (test set)</h3>
-    <table class="cm">
+    <div class="scroll-x"><table class="cm">
       <thead><tr><th></th><th colspan="{{ m.class_names|length }}" class="cm-head">Predicted</th></tr>
         <tr><th></th>{% for n in m.class_names %}<th>{{ n }}</th>{% endfor %}</tr></thead>
       <tbody>
@@ -40,7 +40,7 @@
         </tr>
       {% endfor %}
       </tbody>
-    </table>
+    </table></div>
     {% if m.confusions %}
     <p class="small muted">Rows are the true class, columns the model&rsquo;s answer; the diagonal is correct.
     Most common mistakes:
@@ -52,14 +52,14 @@
 
   <div class="card">
     <h3>Precision, recall and F1 by class</h3>
-    <table class="table compact">
+    <div class="scroll-x"><table class="table compact">
       <thead><tr><th>Class</th><th>Precision</th><th>Recall</th><th>F1</th><th>Images</th></tr></thead>
       <tbody>
       {% for c in m.classes %}
         <tr><td>{{ c.name }}</td><td>{{ c.precision }}</td><td>{{ c.recall }}</td><td>{{ c.f1 }}</td><td>{{ c.support }}</td></tr>
       {% endfor %}
       </tbody>
-    </table>
+    </table></div>
     <p class="small muted">Recall of a class is its sensitivity: the share of its images the model caught.
     Macro averages treat every class equally, so a small class such as TUBERCULOSIS counts as much as a large one.
     {% if m.roc_auc_per_class %}One-vs-rest ROC-AUC:
