@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}PneumoDetect AI{% endblock %}</title>
+  <title>{% block title %}ThoraxIQ{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
@@ -45,7 +45,7 @@
     <aside class="sidebar">
       <a class="brand" href="{% url 'detector:home' %}">
         <img src="{% static 'detector/img/lungs.svg' %}" alt="" class="brand-lungs">
-        <span class="brand-name">PneumoDetect<span>AI Detector</span></span>
+        <span class="brand-name">ThoraxIQ<span>Chest X-ray Classifier</span></span>
       </a>
       <nav class="side-nav" aria-label="Main">
         <a href="{% url 'detector:home' %}" {% if current == 'home' %}class="active" aria-current="page"{% endif %}><svg class="ic"><use href="#i-home"/></svg>Overview</a>
@@ -64,7 +64,7 @@
     <div class="main">
       <header class="topbar">
         <div class="topbar-title">
-          <span class="crumb">PneumoDetect AI</span>
+          <span class="crumb">ThoraxIQ</span>
           <strong>{% block heading %}Overview{% endblock %}</strong>
         </div>
         <nav class="icon-nav" aria-label="Quick links">
@@ -112,7 +112,7 @@
       </main>
 
       <footer class="site-footer">
-        <strong>Educational demonstration only.</strong> PneumoDetect AI is a student machine-learning project.
+        <strong>Educational demonstration only.</strong> ThoraxIQ is a student machine-learning project.
         It is not a medical device, has not been clinically validated, and must not be used to diagnose,
         treat or rule out any condition. If you have health concerns, please consult a qualified clinician.
       </footer>

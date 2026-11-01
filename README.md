@@ -1,4 +1,4 @@
-# PneumoDetect AI
+# ThoraxIQ — Chest X-ray Classification
 
 Educational Django app that classifies chest X-rays into COVID19 / NORMAL / PNEUMONIA / TUBERCULOSIS with a fine-tuned ResNet-18.
 **Not a medical device. Not clinically validated.**

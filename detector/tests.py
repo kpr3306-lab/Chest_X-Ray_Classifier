@@ -37,7 +37,7 @@ class FlowTests(TestCase):
 
     def test_home_contains_required_content(self):
         html = self.client.get(reverse("detector:home")).content.decode()
-        self.assertIn("PneumoDetect", html)
+        self.assertIn("ThoraxIQ", html)
         self.assertIn("Upload X-ray", html)
         self.assertIn("How the AI model works", html)
 
