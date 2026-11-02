@@ -173,7 +173,7 @@ Example using [Render](https://render.com):
 
 Notes:
 - Free hosting disks are ephemeral: uploads and history reset on each redeploy or restart. That is fine for a demo.
-- PyTorch is memory-hungry. If a 512 MB instance runs out of memory, use a host with more RAM (for example Hugging Face Spaces with Docker).
+- **Predictions need more than 512 MB of RAM.** On Render's free 512 MB instance the pages load, but uploading an X-ray fails with *Internal Server Error* because loading PyTorch and the model is too heavy. Use an instance with more RAM (e.g. a paid Render plan).
 - If you deploy a model trained with different transforms, update `eval_transform()` in [detector/ml.py](detector/ml.py) to match.
 
 ## Disclaimer
